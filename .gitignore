@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+.pytest_cache/
+uploads/
+results/
+exports/
+assets/models/
+Ultralytics/
+.DS_Store
+Thumbs.db
+*.log

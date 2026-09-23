@@ -1,0 +1,43 @@
+# Native theme adapted from Streamlit's minimal theme: IPT blue + light canvas.
+[theme]
+base = "light"
+primaryColor = "#005CA9"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#EEF3F8"
+textColor = "#152B43"
+linkColor = "#005CA9"
+borderColor = "#D6E1EC"
+showWidgetBorder = true
+showSidebarBorder = false
+baseRadius = "10px"
+buttonRadius = "8px"
+font = "sans-serif"
+baseFontSize = 16
+headingFontSizes = ["38px", "28px", "21px", "18px", "16px", "14px"]
+headingFontWeights = [700, 650, 600, 600, 600, 600]
+chartCategoricalColors = ["#005CA9", "#009B9B", "#F18B30", "#7751B8", "#DB5461", "#527A9F"]
+blueColor = "#005CA9"
+greenColor = "#007A6C"
+orangeColor = "#BE5D00"
+
+[theme.sidebar]
+backgroundColor = "#062C4E"
+secondaryBackgroundColor = "#164364"
+textColor = "#FFFFFF"
+primaryColor = "#7ED8EB"
+linkColor = "#7ED8EB"
+borderColor = "#2D5677"
+codeBackgroundColor = "#164364"
+
+[server]
+address = "127.0.0.1"
+port = 8501
+headless = true
+maxUploadSize = 200
+folderWatchBlacklist = [".venv", "results", "assets/models"]
+
+[browser]
+gatherUsageStats = false
+
+[client]
+toolbarMode = "viewer"

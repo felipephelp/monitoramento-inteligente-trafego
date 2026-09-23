@@ -1,0 +1,32 @@
+{
+  "query": "person_reid/query.png",
+  "gallery": [
+    "person_reid/candidate_01.png",
+    "person_reid/candidate_02.png",
+    "person_reid/candidate_03.png",
+    "person_reid/candidate_04.png",
+    "person_reid/candidate_05.png",
+    "person_reid/candidate_06.png",
+    "person_reid/candidate_07.png"
+  ],
+  "names": [
+    "Mesma pessoa · pouca luz",
+    "Mesma pessoa · rotação 25°",
+    "Mesma pessoa · oclusão 35%",
+    "Mesma pessoa · espelhada",
+    "Outra pessoa 1",
+    "Outra pessoa 2",
+    "Outra pessoa 3"
+  ],
+  "relations": [
+    "Variação controlada do mesmo recorte",
+    "Variação controlada do mesmo recorte",
+    "Variação controlada do mesmo recorte",
+    "Variação controlada do mesmo recorte",
+    "Pessoa diferente na mesma cena",
+    "Pessoa diferente na mesma cena",
+    "Pessoa diferente na mesma cena"
+  ],
+  "source": "Ultralytics bus.jpg; variações artificiais do mesmo recorte e outras pessoas da cena.",
+  "model": "ResNet18 ImageNet-1K, baseline genérico de aparência."
+}

@@ -1,0 +1,39 @@
+{
+  "query": "reid/query.png",
+  "query_name": "A · consulta",
+  "gallery": [
+    {
+      "path": "reid/candidate_01.png",
+      "name": "B · outro veículo",
+      "relation": "Outro recorte da mesma imagem"
+    },
+    {
+      "path": "reid/candidate_02.png",
+      "name": "A · menos luz",
+      "relation": "Mesmo recorte de consulta: brilho reduzido artificialmente"
+    },
+    {
+      "path": "reid/candidate_03.png",
+      "name": "C · outro veículo",
+      "relation": "Outro recorte da mesma imagem"
+    },
+    {
+      "path": "reid/candidate_04.png",
+      "name": "A · 35% oclusão",
+      "relation": "Mesmo recorte de consulta: máscara artificial de 35% da caixa"
+    },
+    {
+      "path": "reid/candidate_05.png",
+      "name": "D · outro veículo",
+      "relation": "Outro recorte da mesma imagem"
+    },
+    {
+      "path": "reid/candidate_06.png",
+      "name": "A · espelhado",
+      "relation": "Mesmo recorte de consulta: espelhamento artificial"
+    }
+  ],
+  "experiment": "Perturbações controladas do MESMO recorte e distratores de uma única imagem; não é ensaio multicâmera.",
+  "model": "ResNet18 ImageNet-1K, embedding 512D normalizado; sem treinamento para Re-ID.",
+  "source": "Ultralytics dashboard_sample.mp4, frame 0"
+}

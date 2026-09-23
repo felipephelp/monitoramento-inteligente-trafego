@@ -1,0 +1,11 @@
+streamlit==1.64.0
+ultralytics==8.4.155
+torch==2.14.0
+torchvision==0.29.0
+opencv-python==5.0.0.93
+pandas==3.0.5
+plotly==7.1.0
+Pillow==12.3.0
+scipy==1.18.1
+lap==0.5.13
+imageio-ffmpeg>=0.6,<1
