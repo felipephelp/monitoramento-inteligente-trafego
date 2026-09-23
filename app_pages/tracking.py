@@ -2,16 +2,24 @@ from pathlib import Path
 import altair as alt
 import pandas as pd
 import streamlit as st
-from ui import header, EXAMPLES, EXPORTS, save_upload, new_result_dir, download_csv, teaching_prompt, runtime_choice
+from ui import header, EXAMPLES, EXPORTS, save_upload, new_result_dir, download_csv, teaching_prompt, runtime_choice, monitoring_scenario
 from vision import track_video, video_info
 
 header("03", "Trajetórias dão memória ao vídeo", "**YOLO11n + ByteTrack ou BoT-SORT.** Cada execução começa com um tracker novo; IDs são hipóteses locais da sequência.")
-source = st.selectbox("Vídeo de entrada", ["Exemplo de tráfego", "Enviar meu vídeo"], key="track_source")
+source = st.segmented_control(
+    "Cenário e fonte",
+    ["Exemplo · câmera fixa", "Meu vídeo · câmera fixa", "Meu vídeo · drone"],
+    default="Exemplo · câmera fixa",
+    key="track_source",
+)
+scenario = "drone" if source.endswith("drone") else "fixed"
+monitoring_scenario(scenario, "tracking")
 path = EXAMPLES / "traffic.mp4"
-if source == "Enviar meu vídeo":
-    uploaded = st.file_uploader("Vídeo MP4, AVI ou MOV · até 200 MB", type=["mp4", "avi", "mov"], key="track_upload")
+if source != "Exemplo · câmera fixa":
+    label = "Vídeo de drone" if scenario == "drone" else "Vídeo de câmera fixa"
+    uploaded = st.file_uploader(f"{label} · MP4, AVI ou MOV · até 200 MB", type=["mp4", "avi", "mov"], key="track_upload")
     if uploaded is None:
-        st.info("Envie um vídeo ou volte ao exemplo de tráfego.")
+        st.info("A imagem acima ilustra o cenário. Envie o vídeo correspondente para calcular IDs e trajetórias.")
         st.stop()
     path = save_upload(uploaded)
 try:
@@ -20,6 +28,8 @@ except ValueError as exc:
     st.error(str(exc))
     st.stop()
 st.caption(f"Fonte: {info['width']} × {info['height']} · {info['fps']:.1f} fps · {info['duration_s']:.1f} s")
+if scenario == "drone":
+    st.warning("Em vídeo de drone, movimento da plataforma pode parecer movimento dos veículos. Estabilize ou estime o movimento global antes de interpretar trajetórias.", icon=":material/warning:")
 with st.form("tracking_controls"):
     a, b, c = st.columns(3)
     tracker = a.selectbox("Algoritmo", ["ByteTrack", "BoT-SORT"], key="track_algorithm")

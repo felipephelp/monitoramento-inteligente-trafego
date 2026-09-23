@@ -4,22 +4,32 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from ui import EXAMPLES, EXPORTS, download_csv, header, new_result_dir, runtime_choice, save_upload, teaching_prompt
+from ui import EXAMPLES, EXPORTS, download_csv, header, monitoring_scenario, new_result_dir, runtime_choice, save_upload, teaching_prompt
 from vision import track_video, video_info
 
 
 header("04", "Contagem de veículos por linha virtual", "O detector localiza, o tracker mantém o ID e a regra registra um evento quando a trajetória cruza a linha.")
 
-source = st.selectbox("Vídeo de entrada", ["Exemplo de tráfego", "Enviar meu vídeo"], key="count_source")
+source = st.segmented_control(
+    "Cenário e fonte",
+    ["Exemplo · câmera fixa", "Meu vídeo · câmera fixa", "Meu vídeo · drone"],
+    default="Exemplo · câmera fixa",
+    key="count_source",
+)
+scenario = "drone" if source.endswith("drone") else "fixed"
+monitoring_scenario(scenario, "contagem")
 path = EXAMPLES / "traffic.mp4"
-if source == "Enviar meu vídeo":
-    uploaded = st.file_uploader("Vídeo MP4, AVI ou MOV · até 200 MB", type=["mp4", "avi", "mov"], key="count_upload")
+if source != "Exemplo · câmera fixa":
+    label = "Vídeo de drone" if scenario == "drone" else "Vídeo de câmera fixa"
+    uploaded = st.file_uploader(f"{label} · MP4, AVI ou MOV · até 200 MB", type=["mp4", "avi", "mov"], key="count_upload")
     if uploaded is None:
-        st.info("Envie um vídeo ou use o exemplo preparado.")
+        st.info("A imagem acima ilustra o cenário. Envie o vídeo correspondente para executar a contagem.")
         st.stop()
     path = save_upload(uploaded)
 
 info = video_info(path)
+if scenario == "drone":
+    st.warning("Uma linha fixa no quadro só é válida se o vídeo aéreo estiver estabilizado. Caso contrário, a linha se desloca sobre a via e produz cruzamentos falsos.", icon=":material/warning:")
 with st.form("counting_controls"):
     a, b, c = st.columns(3)
     line = a.slider("Altura da linha", .15, .85, .55, .05, key="count_line")
@@ -53,7 +63,7 @@ if saved and saved["source"] == str(path):
     stats = result["stats"]
     video_path = Path(result["video_path"])
     caption = f"Execução atual · linha={stats['line_y']:.2f} · {stats['tracker']} · {stats['frames']} quadros"
-else:
+elif source == "Exemplo · câmera fixa":
     events_path = EXPORTS / "tracking_crossings.csv"
     tracks_path = EXPORTS / "tracking_tracks.csv"
     video_path = EXPORTS / "tracking" / "tracking.mp4"
@@ -61,6 +71,11 @@ else:
     tracks = pd.read_csv(tracks_path) if tracks_path.exists() else pd.DataFrame()
     stats = {"crossings": len(events), "unique_ids": int(tracks.track_id.nunique()) if len(tracks) else 0, "frames": int(tracks.frame.max()+1) if len(tracks) else 0}
     caption = "Resultado pré-calculado com YOLO11n + ByteTrack · linha em 55% da altura"
+else:
+    video_path = path
+    events = pd.DataFrame(columns=["frame", "time_s", "track_id", "class_name", "direction"])
+    stats = {"crossings": 0, "unique_ids": 0, "frames": 0}
+    caption = "Vídeo enviado · execute a contagem para gerar os eventos deste cenário"
 
 left, right = st.columns([1.45, 1], vertical_alignment="top")
 with left:

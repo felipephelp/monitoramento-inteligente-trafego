@@ -3,7 +3,7 @@ import altair as alt
 from PIL import Image
 import streamlit as st
 
-from ui import EXAMPLES, download_csv, header, infer, png_bytes, rank, runtime_choice, teaching_prompt
+from ui import EXAMPLES, download_csv, header, infer, png_bytes, rank, runtime_choice, teaching_prompt, visual_ranking
 from vision import crop_class_detections, person_reid_challenges
 
 
@@ -51,6 +51,7 @@ saved = st.session_state.person_reid_result
 if saved and saved["signature"] == signature:
     table = saved["table"]
     st.subheader("Ranking calculado")
+    visual_ranking(table, gallery, "Ranking visual das pessoas")
     chart = alt.Chart(table).mark_bar(cornerRadiusEnd=4).encode(
         x=alt.X("cosine_similarity:Q", title="Similaridade do cosseno", scale=alt.Scale(domain=[-1, 1])),
         y=alt.Y("name:N", title=None, sort="-x"),

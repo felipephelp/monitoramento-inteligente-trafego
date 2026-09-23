@@ -2,7 +2,7 @@ from io import BytesIO
 import altair as alt
 from PIL import Image, ImageEnhance
 import streamlit as st
-from ui import header, EXAMPLES, read_json, png_bytes, rank, download_csv, teaching_prompt, figure
+from ui import header, EXAMPLES, read_json, png_bytes, rank, download_csv, teaching_prompt, figure, visual_ranking
 
 header("04", "Aparência gera candidatos, não identidade", "**ResNet18 · ImageNet · embedding de 512 dimensões.** Um baseline neural real para ensinar similaridade; não é um modelo especializado em Re-ID de veículos.")
 source = st.segmented_control("Conjunto", ["Exemplo controlado", "Minhas imagens"], default="Exemplo controlado", key="reid_source")
@@ -55,6 +55,7 @@ with result_slot:
     if saved and saved["query"]==png_bytes(modified) and saved["names"]==names:
         df=saved["df"]
         st.subheader("Ranking calculado pelo modelo")
+        visual_ranking(df, gallery, "Ranking visual dos veículos")
         st.altair_chart(alt.Chart(df).mark_bar(cornerRadiusEnd=5).encode(
             x=alt.X("cosine_similarity:Q",title="Similaridade do cosseno",scale=alt.Scale(domain=[-1,1])),
             y=alt.Y("name:N",title=None,sort="-x"),color=alt.Color("relation:N",title="Origem"),

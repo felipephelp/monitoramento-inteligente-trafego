@@ -28,15 +28,15 @@ O servidor fica vinculado a `127.0.0.1`, acessível apenas nesta máquina. Feche
 | Página | O que executa | O que observar |
 |---|---|---|
 | Detecção | YOLO11n pré-treinado no COCO, com confiança/resolução variáveis | Caixas, classe, score e objetos perdidos |
-| Tracking | YOLO11n + ByteTrack ou BoT-SORT padrão | IDs temporários, trajetórias, cruzamentos de linha, obstrução opcional |
-| Contagem | YOLO11n + tracker + linha virtual | Eventos por classe e direção, efeito da posição da linha |
-| Re-ID de veículos | ResNet18 ImageNet sem classificador, embeddings 512D e cosseno | Ranking de aparência e efeito da iluminação |
-| Re-ID de pessoas | Detecção YOLO + ResNet18 em recortes de pessoas | Oclusão, rotação, iluminação, semelhança e distratores |
+| Tracking | YOLO11n + ByteTrack ou BoT-SORT padrão | IDs temporários e trajetórias em câmera fixa ou vídeo de drone |
+| Contagem | YOLO11n + tracker + linha virtual | Eventos por classe e direção; geometria fixa versus plataforma móvel |
+| Re-ID de veículos | ResNet18 ImageNet sem classificador, embeddings 512D e cosseno | Ranking visual com imagem, posição e similaridade de cada candidato |
+| Re-ID de pessoas | Detecção YOLO + ResNet18 em recortes de pessoas | Ranking visual sob oclusão, rotação, iluminação, semelhança e distratores |
 | Oclusão | YOLO executado a 0, 20, 40, 60 e 80% de máscara | Retenção da detecção e score da correspondência |
 | Pesquisa & operação | Figuras extraídas dos materiais originais + fluxos | CNN/Transformer, homografia, arquitetura e produtos |
 | Aplicações | Evidências reais do laboratório | Detecção, tracking, contagem, Re-ID, comportamento e anomalias |
 
-As páginas aceitam imagens/vídeos próprios. No Re-ID, recorte o objeto antes de enviar e use uma consulta mais duas ou mais imagens de galeria.
+As páginas aceitam imagens/vídeos próprios. Tracking e contagem apresentam cenários de câmera fixa e drone; para executar o cenário aéreo, envie um vídeo de drone estabilizado. No Re-ID, recorte o objeto antes de enviar e use uma consulta mais duas ou mais imagens de galeria.
 
 **Demonstração ≠ benchmark.** Não se apresentam mAP, recall, IDF1 ou HOTA sem anotações de referência. Os cruzamentos e IDs são estimativas. A curva de oclusão usa a detecção original como referência, não ground truth; pode não ser monotônica. Similaridade de aparência não é probabilidade de identidade. O Re-ID usa um baseline ImageNet genérico e o exemplo padrão é um experimento de perturbação de recortes, não uma avaliação multicâmera. BoT-SORT usa a configuração padrão, sem módulo Re-ID ativado.
 

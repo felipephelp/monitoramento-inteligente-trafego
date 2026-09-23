@@ -105,6 +105,65 @@ def figure(name, caption):
     if path.exists():
         st.image(str(path), caption=caption, width="stretch")
 
+def monitoring_scenario(kind, task):
+    """Mostra a geometria e os desafios do cenário antes do processamento."""
+    scenarios = {
+        "fixed": {
+            "title": "Câmera fixa · corredor viário",
+            "image": EXAMPLES / "urban_traffic_frame.jpg",
+            "caption": "Ponto de vista oblíquo e estável · exemplo público Ultralytics",
+            "badge": "Geometria estável",
+            "text": (
+                "A câmera não se move, então a linha virtual permanece no mesmo lugar. "
+                "Perspectiva, veículos sobrepostos e congestionamento ainda alteram a escala aparente."
+            ),
+            "focus": "Calibrar uma vez, validar a linha por faixa e observar oclusões próximas à câmera.",
+        },
+        "drone": {
+            "title": "Drone · vista aérea",
+            "image": EXAMPLES / "vehicles.jpg",
+            "caption": "Vista quase nadir com objetos pequenos · exemplo público Ultralytics",
+            "badge": "Campo amplo",
+            "text": (
+                "A visão aérea cobre várias vias, mas os veículos ocupam poucos pixels. "
+                "Movimento, vibração e mudança de altitude deslocam linhas e trajetórias no quadro."
+            ),
+            "focus": "Estabilizar o vídeo, usar resolução adequada e compensar o movimento da câmera.",
+        },
+    }
+    item = scenarios[kind]
+    with st.container(border=True):
+        image_col, text_col = st.columns([1.35, 1], vertical_alignment="center")
+        with image_col:
+            st.image(str(item["image"]), caption=item["caption"], width="stretch")
+        with text_col:
+            st.subheader(item["title"], icon=":material/videocam:")
+            st.badge(item["badge"], color="blue")
+            st.markdown(item["text"])
+            st.markdown(f"**No {task}:** {item['focus']}")
+
+def visual_ranking(table, gallery, title="Ranking visual"):
+    """Renderiza o ranking de Re-ID com imagens e resultados legíveis."""
+    st.subheader(title, icon=":material/photo_library:")
+    st.markdown(
+        "Os candidatos abaixo já estão **reordenados do mais semelhante para o menos semelhante**. "
+        "O cosseno mede proximidade visual; não é probabilidade de identidade."
+    )
+    rows = list(table.reset_index(drop=True).iterrows())
+    for start in range(0, len(rows), 2):
+        columns = st.columns(2)
+        for column, (position, row) in zip(columns, rows[start:start + 2]):
+            original_index = int(row["index"])
+            score = float(row["cosine_similarity"])
+            with column:
+                with st.container(border=True):
+                    st.subheader(f"{position + 1}º · {row['name']}")
+                    st.image(gallery[original_index], width="stretch")
+                    st.metric("Similaridade do cosseno", f"{score:.3f}")
+                    relation = row.get("relation", "")
+                    if relation:
+                        st.markdown(f"**Relação no experimento:** {relation}")
+
 def runtime_choice(key):
     import torch
     options = ["CPU"] + (["GPU CUDA"] if torch.cuda.is_available() else [])
