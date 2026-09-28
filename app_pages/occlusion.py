@@ -23,7 +23,8 @@ draw=ImageDraw.Draw(preview)
 draw.rectangle(box,outline="#E07516",width=5)
 left,right=st.columns([1.6,1])
 with left:
-    st.image(preview,caption="Caixa de referência selecionada",width="stretch")
+    with st.container(horizontal_alignment="center"):
+        st.image(preview,caption="Caixa de referência selecionada",width=560)
 with right:
     st.subheader("Hipótese antes de executar")
     st.markdown("A detecção desaparecerá gradualmente? Ou o score cairá e voltará a subir?")
@@ -46,7 +47,12 @@ if saved and saved["data"]==data and saved["box"]==box and saved["conf"]==conf:
     st.altair_chart(chart,width="stretch")
     selected=st.select_slider("Inspecionar nível",options=[0,20,40,60,80],value=40,key="occ_level")
     i=[0,20,40,60,80].index(selected)
-    st.image(result["images"][i],caption=f"Saída real com {selected}% da largura da caixa ocultada",width="stretch")
+    with st.container(horizontal_alignment="center"):
+        st.image(
+            result["images"][i],
+            caption=f"Saída real com {selected}% da largura da caixa ocultada",
+            width=680,
+        )
     st.dataframe(metrics,hide_index=True)
     with st.container(horizontal=True):
         download_csv(metrics,"experimento_oclusao.csv","occ_csv")

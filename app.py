@@ -18,7 +18,6 @@ pages = {
         st.Page("app_pages/occlusion.py", title="Oclusão", icon=":material/visibility_off:", url_path="occlusion"),
     ],
     "Conteúdo da apresentação": [
-        st.Page("app_pages/research.py", title="Pesquisa & operação", icon=":material/hub:", url_path="research"),
         st.Page("app_pages/vlm.py", title="VLM & multimodal", icon=":material/neurology:", url_path="vlm"),
         st.Page("app_pages/applications.py", title="Aplicações", icon=":material/grid_view:", url_path="applications"),
         st.Page("app_pages/guide.py", title="Guia & fontes", icon=":material/menu_book:", url_path="guide"),

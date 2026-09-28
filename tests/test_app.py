@@ -37,12 +37,6 @@ class AppSmokeTests(unittest.TestCase):
         app.button(key="occ_execute").click().run()
         self.assertFalse(app.exception)
         self.assertEqual(len(app.session_state["occlusion_result"]["result"]["metrics"]),5)
-        app.switch_page("app_pages/research.py").run()
-        self.assertFalse(app.exception)
-        for value in ["Geometria","Arquitetura","Produtos"]:
-            app.session_state["research_view"]=value
-            app.run()
-            self.assertFalse(app.exception)
         app.switch_page("app_pages/vlm.py").run()
         self.assertFalse(app.exception)
         self.assertTrue(any("Prompt que será enviado" in item.value for item in app.subheader))

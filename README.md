@@ -34,7 +34,6 @@ O servidor fica vinculado a `127.0.0.1`, acessível apenas nesta máquina. Feche
 | Re-ID de pessoas | Detecção YOLO + ResNet18 em recortes de pessoas | Ranking visual sob oclusão, rotação, iluminação, semelhança e distratores |
 | Oclusão | YOLO executado a 0, 20, 40, 60 e 80% de máscara | Retenção da detecção e score da correspondência |
 | VLM e multimodal | BLIP + Qwen2.5-1.5B-Instruct | Descrição visual em português e fusão com radar, semáforo e clima |
-| Pesquisa & operação | Figuras extraídas dos materiais originais + fluxos | CNN/Transformer, homografia, arquitetura e produtos |
 | Aplicações | Evidências reais do laboratório | Detecção, tracking, contagem, Re-ID, comportamento e anomalias |
 
 As páginas aceitam imagens/vídeos próprios. Tracking e contagem apresentam cenários de câmera fixa e drone; para executar o cenário aéreo, envie um vídeo de drone estabilizado. No Re-ID, recorte o objeto antes de enviar e use uma consulta mais duas ou mais imagens de galeria.
