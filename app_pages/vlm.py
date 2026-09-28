@@ -46,6 +46,12 @@ if view == "BLIP: imagem e linguagem":
             border="horizontal",
         )
 
+    prompts = {
+        "Sem orientação": "",
+        "Cena de tráfego": "a traffic monitoring image showing",
+        "Condição da via": "the traffic condition is",
+    }
+
     with st.form("vlm_caption_controls", border=True):
         prompt_mode = st.segmented_control(
             "Orientação textual",
@@ -53,17 +59,17 @@ if view == "BLIP: imagem e linguagem":
             default="Sem orientação",
             key="vlm_prompt_mode",
         )
+        st.subheader("Prompt que será enviado ao BLIP", icon=":material/terminal:")
+        st.code(
+            prompts[prompt_mode] or "[sem prompt textual — geração condicionada somente pela imagem]",
+            language=None,
+        )
         submitted = st.form_submit_button(
             "Gerar descrição com BLIP",
             icon=":material/play_arrow:",
             type="primary",
         )
 
-    prompts = {
-        "Sem orientação": "",
-        "Cena de tráfego": "a traffic monitoring image showing",
-        "Condição da via": "the traffic condition is",
-    }
     if submitted:
         result_slot = st.container()
         try:
@@ -74,6 +80,7 @@ if view == "BLIP: imagem e linguagem":
                 "caption_en": text_en,
                 "caption_pt": text_pt,
                 "prompt_mode": prompt_mode,
+                "prompt_sent": prompts[prompt_mode],
             }
         except Exception as exc:
             st.error(
@@ -83,15 +90,27 @@ if view == "BLIP: imagem e linguagem":
 
     result = st.session_state.get("vlm_result")
     if result and "caption_pt" in result:
-        with st.container(border=True):
-            st.subheader("Resposta em português", icon=":material/subtitles:")
-            st.markdown(f"### {result['caption_pt']}")
-            st.caption(
-                f"Orientação utilizada: {result['prompt_mode']}. A imagem é descrita pelo BLIP e a saída é "
-                "traduzida para português brasileiro pelo Qwen2.5-1.5B-Instruct."
+        st.header("Prompt e saída do modelo", icon=":material/compare_arrows:")
+        prompt_col, output_col = st.columns(2, vertical_alignment="top")
+        with prompt_col.container(border=True, height="stretch"):
+            st.subheader("1. Prompt enviado", icon=":material/input:")
+            st.code(
+                result.get("prompt_sent")
+                or "[sem prompt textual — geração condicionada somente pela imagem]",
+                language=None,
             )
-            with st.expander("Ver saída original do BLIP"):
-                st.code(result["caption_en"], language=None)
+            st.caption(f"Modo selecionado: {result['prompt_mode']}.")
+        with output_col.container(border=True, height="stretch"):
+            st.subheader("2. Saída final em português", icon=":material/subtitles:")
+            st.markdown(f"## {result['caption_pt']}")
+
+        with st.container(border=True):
+            st.subheader("Saída bruta do BLIP", icon=":material/data_object:")
+            st.code(result["caption_en"], language=None)
+            st.caption(
+                "O BLIP gera originalmente em inglês. O Qwen2.5-1.5B-Instruct traduz a resposta para português "
+                "brasileiro; nenhuma medição ou detecção adicional é realizada nesta etapa."
+            )
 
     st.mermaid_chart(
         """flowchart LR
@@ -150,6 +169,21 @@ else:
             border="horizontal",
         )
 
+    prompt_preview = (
+        "Use exatamente os quatro dados em uma única frase: "
+        "evidência visual = [descrição que será produzida pelo BLIP]; "
+        f"radar = {speed} km/h; semáforo = {signal.lower()}; ambiente = {weather.lower()}. "
+        "Formato: A evidência visual mostra ...; o radar informa ...; "
+        "o semáforo está ...; o ambiente está ...."
+    )
+    with st.container(border=True):
+        st.subheader("Prompt preparado para a fusão", icon=":material/terminal:")
+        st.code(prompt_preview, language=None)
+        st.caption(
+            "O campo entre colchetes será substituído pela descrição real produzida pelo BLIP antes de o prompt "
+            "ser enviado ao Qwen."
+        )
+
     if st.button(
         "Gerar relatório com o VLM",
         icon=":material/play_arrow:",
@@ -174,20 +208,28 @@ else:
 
     fusion_result = st.session_state.get("fusion_vlm_result")
     if fusion_result and "visual_evidence_en" in fusion_result:
+        st.header("Prompt e saída do modelo", icon=":material/compare_arrows:")
+        prompt_col, output_col = st.columns(2, vertical_alignment="top")
+        with prompt_col.container(border=True, height="stretch"):
+            st.subheader("1. Prompt enviado ao Qwen", icon=":material/input:")
+            st.code(fusion_result["prompt_pt"], language=None)
+        with output_col.container(border=True, height="stretch"):
+            st.subheader("2. Saída gerada pelo Qwen", icon=":material/assignment:")
+            st.markdown(f"## {fusion_result['generated_pt']}")
+
         with st.container(border=True):
-            st.subheader("Relatório gerado em português", icon=":material/assignment:")
-            st.markdown(f"### {fusion_result['generated_pt']}")
-            st.markdown(
-                f"**Contexto usado na geração:** {fusion_result['speed']} km/h · "
-                f"semáforo {fusion_result['signal'].lower()} · {fusion_result['weather'].lower()}."
-            )
-            with st.expander("Auditar entradas e saída original"):
-                st.markdown("**Evidência visual original produzida pelo BLIP**")
+            st.subheader("Saídas intermediárias do pipeline", icon=":material/account_tree:")
+            raw_col, translated_col = st.columns(2, vertical_alignment="top")
+            with raw_col:
+                st.markdown("**BLIP — descrição original em inglês**")
                 st.code(fusion_result["visual_evidence_en"], language=None)
-                st.markdown("**Evidência visual traduzida para português**")
+            with translated_col:
+                st.markdown("**Qwen — descrição traduzida para português**")
                 st.code(fusion_result["visual_evidence_pt"], language=None)
-                st.markdown("**Prompt multimodal enviado ao Qwen**")
-                st.code(fusion_result["prompt_pt"], language=None)
+            st.markdown(
+                f"**Contexto utilizado:** {fusion_result['speed']} km/h · semáforo "
+                f"{fusion_result['signal'].lower()} · {fusion_result['weather'].lower()}."
+            )
             st.caption(
                 "Esta é uma demonstração de geração, não uma comprovação automática de infração. Em produção, "
                 "sincronização, calibração e evidência verificável continuam obrigatórias."

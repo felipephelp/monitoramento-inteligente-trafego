@@ -45,9 +45,30 @@ class AppSmokeTests(unittest.TestCase):
             self.assertFalse(app.exception)
         app.switch_page("app_pages/vlm.py").run()
         self.assertFalse(app.exception)
-        app.session_state["vlm_view"]="Fusão: câmera e contexto"
+        self.assertTrue(any("Prompt que será enviado" in item.value for item in app.subheader))
+        app.session_state["vlm_result"] = {
+            "caption_en": "a busy urban road",
+            "caption_pt": "uma via urbana movimentada",
+            "prompt_mode": "Cena de tráfego",
+            "prompt_sent": "a traffic monitoring image showing",
+        }
         app.run()
         self.assertFalse(app.exception)
+        self.assertTrue(any("Saída final em português" in item.value for item in app.subheader))
+        app.session_state["vlm_view"]="Fusão: câmera e contexto"
+        app.session_state["fusion_vlm_result"] = {
+            "visual_evidence_en": "several cars on a road",
+            "visual_evidence_pt": "vários carros em uma via",
+            "prompt_pt": "Evidência visual: vários carros; radar: 42 km/h.",
+            "generated_pt": "Há vários carros na via e o radar informa 42 km/h.",
+            "speed": 42,
+            "signal": "Vermelho",
+            "weather": "Seco",
+        }
+        app.run()
+        self.assertFalse(app.exception)
+        self.assertTrue(any("Prompt preparado para a fusão" in item.value for item in app.subheader))
+        self.assertTrue(any("Saída gerada pelo Qwen" in item.value for item in app.subheader))
         app.switch_page("app_pages/applications.py").run()
         self.assertFalse(app.exception)
         app.switch_page("app_pages/guide.py").run()
