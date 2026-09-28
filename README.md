@@ -12,13 +12,13 @@ cd monitoramento-inteligente-trafego
 py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe prepare_examples.py
-.\.venv\Scripts\python.exe -m streamlit run app.py
+.\.venv\Scripts\python.exe -m streamlit run app.py --server.port 8502
 ```
 
 Depois, abra <http://localhost:8502>. Nas próximas execuções, use **INICIAR.bat** (duplo clique) ou:
 
 ```powershell
-.\.venv\Scripts\python.exe -m streamlit run app.py
+.\.venv\Scripts\python.exe -m streamlit run app.py --server.port 8502
 ```
 
 O servidor fica vinculado a `127.0.0.1`, acessível apenas nesta máquina. Feche o terminal ou pressione `Ctrl+C` para encerrá-lo. Se ele já estiver executando em segundo plano, basta acessar o endereço.
@@ -33,6 +33,7 @@ O servidor fica vinculado a `127.0.0.1`, acessível apenas nesta máquina. Feche
 | Re-ID de veículos | ResNet18 ImageNet sem classificador, embeddings 512D e cosseno | Ranking visual com imagem, posição e similaridade de cada candidato |
 | Re-ID de pessoas | Detecção YOLO + ResNet18 em recortes de pessoas | Ranking visual sob oclusão, rotação, iluminação, semelhança e distratores |
 | Oclusão | YOLO executado a 0, 20, 40, 60 e 80% de máscara | Retenção da detecção e score da correspondência |
+| VLM e multimodal | BLIP + Qwen2.5-1.5B-Instruct | Descrição visual em português e fusão com radar, semáforo e clima |
 | Pesquisa & operação | Figuras extraídas dos materiais originais + fluxos | CNN/Transformer, homografia, arquitetura e produtos |
 | Aplicações | Evidências reais do laboratório | Detecção, tracking, contagem, Re-ID, comportamento e anomalias |
 
@@ -75,6 +76,33 @@ py -3.12 -m venv .venv
 ```
 
 Os pesos e exemplos precisam de internet apenas no preparo inicial. Depois de baixados, as inferências são locais. O backend funciona em CPU; GPU aparece na interface somente quando o PyTorch instalado reconhece CUDA. A instalação CPU entregue prioriza portabilidade e não faz uso da RTX sem uma build CUDA compatível.
+
+## Modelos e onde obtê-los
+
+Os pesos não são armazenados no GitHub. Eles são baixados das fontes oficiais no primeiro preparo ou na primeira inferência e ficam apenas no cache local.
+
+| Componente | Uso no laboratório | Fonte oficial |
+|---|---|---|
+| Ultralytics YOLO11n | Detecção, tracking, contagem e recorte de pessoas | [Documentação YOLO11](https://docs.ultralytics.com/models/yolo11/) · [pacote e pesos Ultralytics](https://github.com/ultralytics/ultralytics) |
+| ByteTrack | Associação temporal disponível no tracking | [Repositório oficial ByteTrack](https://github.com/ifzhang/ByteTrack) |
+| BoT-SORT | Alternativa de tracking disponível na interface | [Repositório oficial BoT-SORT](https://github.com/NirAharon/BoT-SORT) |
+| ResNet18 | Embeddings didáticos para Re-ID | [pesos oficiais do Torchvision](https://pytorch.org/vision/main/models/generated/torchvision.models.resnet18.html) |
+| BLIP image captioning base | Extração da evidência visual | [Salesforce BLIP no Hugging Face](https://huggingface.co/Salesforce/blip-image-captioning-base) · [artigo BLIP](https://arxiv.org/abs/2201.12086) |
+| Qwen2.5-1.5B-Instruct | Tradução para português brasileiro e síntese multimodal | [Qwen2.5-1.5B-Instruct no Hugging Face](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct) · [repositório Qwen2.5](https://github.com/QwenLM/Qwen2.5) |
+
+Para pré-carregar os exemplos e os pesos usados pelo backend:
+
+```powershell
+.\.venv\Scripts\python.exe prepare_examples.py
+```
+
+O BLIP e o Qwen são baixados automaticamente pela biblioteca Transformers ao abrir a página **VLM e multimodal** e executar a primeira geração. O cache fica em `.model-cache/`, pasta ignorada pelo Git. A primeira execução pode demorar e exige espaço em disco; as seguintes reutilizam o cache.
+
+## Segurança e privacidade
+
+Este projeto não requer chave de API, token de serviço ou credencial para executar localmente. Arquivos `.env`, `.streamlit/secrets.toml`, chaves privadas, uploads, resultados, ambientes virtuais e caches de modelos estão excluídos pelo `.gitignore`. Se uma integração externa for adicionada futuramente, mantenha a credencial somente em variáveis de ambiente ou em `.streamlit/secrets.toml` e nunca faça commit desses arquivos.
+
+Antes de publicar uma instância na internet, adicione autenticação, limites de upload, política de retenção e consentimento para imagens de pessoas e veículos. A versão atual foi projetada como laboratório local e não envia imagens para APIs externas.
 
 ## Fontes, dados e uso
 

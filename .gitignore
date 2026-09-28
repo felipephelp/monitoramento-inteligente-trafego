@@ -5,6 +5,15 @@ uploads/
 results/
 exports/
 assets/models/
+.model-cache/
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+*.pem
+*.key
+*.p12
+*.pfx
 Ultralytics/
 .DS_Store
 Thumbs.db

@@ -43,6 +43,11 @@ class AppSmokeTests(unittest.TestCase):
             app.session_state["research_view"]=value
             app.run()
             self.assertFalse(app.exception)
+        app.switch_page("app_pages/vlm.py").run()
+        self.assertFalse(app.exception)
+        app.session_state["vlm_view"]="Fusão: câmera e contexto"
+        app.run()
+        self.assertFalse(app.exception)
         app.switch_page("app_pages/applications.py").run()
         self.assertFalse(app.exception)
         app.switch_page("app_pages/guide.py").run()

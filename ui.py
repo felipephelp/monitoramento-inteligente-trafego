@@ -3,6 +3,7 @@ from pathlib import Path
 from io import BytesIO
 import hashlib
 import json
+import os
 import threading
 import uuid
 import pandas as pd
@@ -14,6 +15,7 @@ ASSETS = ROOT / "assets"
 EXAMPLES = ASSETS / "examples"
 EXPORTS = ROOT / "exports"
 REFERENCES = ASSETS / "referencias"
+os.environ.setdefault("HF_HOME", str(ROOT / ".model-cache"))
 
 def png_bytes(image):
     buf = BytesIO()
@@ -30,6 +32,28 @@ def embedder(device="cpu"):
     from vision import load_embedder
     return load_embedder(device=device), threading.RLock()
 
+@st.cache_resource(max_entries=1)
+def vlm_captioner():
+    """Carrega BLIP uma vez; o primeiro uso baixa os pesos do modelo."""
+    from transformers import BlipForConditionalGeneration, BlipProcessor
+
+    model_id = "Salesforce/blip-image-captioning-base"
+    processor = BlipProcessor.from_pretrained(model_id, use_fast=True)
+    model = BlipForConditionalGeneration.from_pretrained(model_id)
+    model.eval()
+    return processor, model, threading.RLock()
+
+@st.cache_resource(max_entries=1)
+def fusion_text_generator():
+    """Carrega o gerador textual que sintetiza evidência visual e sensores."""
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    model_id = "Qwen/Qwen2.5-1.5B-Instruct"
+    tokenizer = AutoTokenizer.from_pretrained(model_id)
+    model = AutoModelForCausalLM.from_pretrained(model_id, dtype="auto")
+    model.eval()
+    return tokenizer, model, threading.RLock()
+
 @st.cache_data(max_entries=30, show_spinner=False)
 def infer(data, conf, imgsz, device="cpu"):
     from vision import detect_image
@@ -43,6 +67,84 @@ def rank(data, gallery_bytes, names, device="cpu"):
     model, lock = embedder(device)
     with lock:
         return rank_gallery(model, Image.open(BytesIO(data)).convert("RGB"), [Image.open(BytesIO(b)).convert("RGB") for b in gallery_bytes], names=names)
+
+@st.cache_data(max_entries=20, show_spinner=False)
+def caption_image(data, prompt=""):
+    """Gera uma legenda real com BLIP; retorna o texto bruto produzido pelo modelo."""
+    import torch
+
+    processor, model, lock = vlm_captioner()
+    image = Image.open(BytesIO(data)).convert("RGB")
+    inputs = processor(images=image, text=prompt or None, return_tensors="pt")
+    with lock, torch.inference_mode():
+        output = model.generate(**inputs, max_new_tokens=45, num_beams=3)
+    return processor.decode(output[0], skip_special_tokens=True).strip()
+
+@st.cache_data(max_entries=30, show_spinner=False)
+def translate_to_portuguese(text):
+    """Traduz a resposta do BLIP para português brasileiro com o Qwen local."""
+    import torch
+
+    tokenizer, model, lock = fusion_text_generator()
+    messages = [
+        {
+            "role": "system",
+            "content": "Traduza para português brasileiro. Responda somente com a tradução, sem explicação.",
+        },
+        {"role": "user", "content": text},
+    ]
+    chat = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    inputs = tokenizer(chat, return_tensors="pt")
+    with lock, torch.inference_mode():
+        output = model.generate(**inputs, max_new_tokens=70, do_sample=False, repetition_penalty=1.1)
+    generated_tokens = output[0][inputs.input_ids.shape[1]:]
+    return tokenizer.decode(generated_tokens, skip_special_tokens=True).strip()
+
+@st.cache_data(max_entries=30, show_spinner=False)
+def multimodal_report(data, speed, signal, weather):
+    """Extrai evidência visual com BLIP e gera a síntese multimodal com Qwen."""
+    import torch
+
+    visual_evidence = caption_image(data)
+    visual_evidence_pt = translate_to_portuguese(visual_evidence)
+    user_prompt = (
+        "Use exatamente os quatro dados em uma única frase: "
+        f"evidência visual = {visual_evidence_pt}; "
+        f"radar = {int(speed)} km/h; "
+        f"semáforo = {signal.lower()}; "
+        f"ambiente = {weather.lower()}. "
+        "Formato: A evidência visual mostra ...; o radar informa ...; "
+        "o semáforo está ...; o ambiente está ...."
+    )
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "Você redige uma frase factual de monitoramento de tráfego em português brasileiro. "
+                "Copie todos os valores exatamente, não interprete, não use conhecimento externo e não "
+                "declare limites, causalidade, identidade ou infrações."
+            ),
+        },
+        {"role": "user", "content": user_prompt},
+    ]
+    tokenizer, model, lock = fusion_text_generator()
+    chat = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    inputs = tokenizer(chat, return_tensors="pt")
+    with lock, torch.inference_mode():
+        output = model.generate(
+            **inputs,
+            max_new_tokens=70,
+            do_sample=False,
+            repetition_penalty=1.1,
+        )
+    generated_tokens = output[0][inputs.input_ids.shape[1]:]
+    generated_pt = tokenizer.decode(generated_tokens, skip_special_tokens=True).strip()
+    return {
+        "visual_evidence_en": visual_evidence,
+        "visual_evidence_pt": visual_evidence_pt,
+        "prompt_pt": user_prompt,
+        "generated_pt": generated_pt,
+    }
 
 @st.cache_data(max_entries=15, show_spinner=False)
 def occlude(data, box, conf, device="cpu"):

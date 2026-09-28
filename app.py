@@ -4,7 +4,7 @@ import streamlit as st
 
 st.set_page_config(page_title="Tráfego inteligente | Laboratório", page_icon=":material/traffic:", layout="wide")
 
-for name in ("detection_result", "tracking_result", "counting_result", "reid_result", "person_reid_result", "occlusion_result"):
+for name in ("detection_result", "tracking_result", "counting_result", "reid_result", "person_reid_result", "occlusion_result", "vlm_result", "fusion_vlm_result"):
     st.session_state.setdefault(name, None)
 
 pages = {
@@ -19,6 +19,7 @@ pages = {
     ],
     "Conteúdo da apresentação": [
         st.Page("app_pages/research.py", title="Pesquisa & operação", icon=":material/hub:", url_path="research"),
+        st.Page("app_pages/vlm.py", title="VLM & multimodal", icon=":material/neurology:", url_path="vlm"),
         st.Page("app_pages/applications.py", title="Aplicações", icon=":material/grid_view:", url_path="applications"),
         st.Page("app_pages/guide.py", title="Guia & fontes", icon=":material/menu_book:", url_path="guide"),
     ],
@@ -28,6 +29,6 @@ with st.sidebar:
     st.markdown("### Tráfego inteligente")
     st.caption("Laboratório de visão computacional\n\nFelipe Euphrasio · 60 min")
     st.badge("Inferência local", icon=":material/memory:", color="blue")
-    st.caption("YOLO11n · ByteTrack / BoT-SORT\n\nContagem por linha · Re-ID de veículos e pessoas")
+    st.caption("YOLO11n · ByteTrack / BoT-SORT\n\nContagem por linha · Re-ID · VLM e fusão multimodal")
     st.caption("Altere parâmetros, execute e compare. Os resultados pré-carregados também foram calculados pelos modelos.")
 page.run()

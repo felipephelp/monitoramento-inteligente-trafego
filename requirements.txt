@@ -9,3 +9,4 @@ Pillow==12.3.0
 scipy==1.18.1
 lap==0.5.13
 imageio-ffmpeg>=0.6,<1
+transformers==4.56.2
