@@ -39,12 +39,13 @@ class AppSmokeTests(unittest.TestCase):
         self.assertEqual(len(app.session_state["occlusion_result"]["result"]["metrics"]),5)
         app.switch_page("app_pages/vlm.py").run()
         self.assertFalse(app.exception)
-        self.assertTrue(any("Prompt que será enviado" in item.value for item in app.subheader))
+        self.assertTrue(any("Prompt do cenário" in item.value for item in app.subheader))
         app.session_state["vlm_result"] = {
-            "caption_en": "a busy urban road",
-            "caption_pt": "uma via urbana movimentada",
-            "prompt_mode": "Cena de tráfego",
-            "prompt_sent": "a traffic monitoring image showing",
+            "scenario": "Cena de tráfego",
+            "visual_evidence_en": "a busy urban road",
+            "visual_evidence_pt": "uma via urbana movimentada",
+            "prompt_pt": "Descreva os atores e o fluxo visíveis.",
+            "generated_pt": "Há veículos circulando em uma via urbana.",
         }
         app.run()
         self.assertFalse(app.exception)

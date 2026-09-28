@@ -1,12 +1,11 @@
 import streamlit as st
 
 from ui import (
-    caption_image,
     header,
     multimodal_report,
+    scenario_vlm_report,
     source_image,
     teaching_prompt,
-    translate_to_portuguese,
 )
 
 
@@ -46,26 +45,33 @@ if view == "BLIP: imagem e linguagem":
             border="horizontal",
         )
 
-    prompts = {
-        "Sem orientação": "",
-        "Cena de tráfego": "a traffic monitoring image showing",
-        "Condição da via": "the traffic condition is",
+    prompt_templates = {
+        "Cena de tráfego": (
+            "Use somente [EVIDÊNCIA VISUAL DO BLIP]. Descreva os atores explicitamente mencionados e informe "
+            "que movimento, velocidade, direção do fluxo e interações não podem ser determinados por uma imagem "
+            "estática quando não estiverem presentes na evidência. Não trate veículos estacionados como congestionamento."
+        ),
+        "Condição da via": (
+            "Use somente [EVIDÊNCIA VISUAL DO BLIP]. Mencione superfície, visibilidade, ocupação, congestionamento, "
+            "obstruções ou riscos apenas quando estiverem explícitos. Caso contrário, declare que não é possível "
+            "determinar a condição da via. Não trate veículos estacionados como congestionamento."
+        ),
     }
 
     with st.form("vlm_caption_controls", border=True):
-        prompt_mode = st.segmented_control(
-            "Orientação textual",
-            ["Sem orientação", "Cena de tráfego", "Condição da via"],
-            default="Sem orientação",
+        scenario = st.segmented_control(
+            "Cenário analisado",
+            ["Cena de tráfego", "Condição da via"],
+            default="Cena de tráfego",
             key="vlm_prompt_mode",
         )
-        st.subheader("Prompt que será enviado ao BLIP", icon=":material/terminal:")
-        st.code(
-            prompts[prompt_mode] or "[sem prompt textual — geração condicionada somente pela imagem]",
-            language=None,
+        st.subheader("Prompt do cenário", icon=":material/terminal:")
+        st.code(prompt_templates[scenario], language=None)
+        st.caption(
+            "Na execução, o trecho entre colchetes é substituído pela descrição visual produzida pelo BLIP."
         )
         submitted = st.form_submit_button(
-            "Gerar descrição com BLIP",
+            "Analisar cenário com BLIP + Qwen",
             icon=":material/play_arrow:",
             type="primary",
         )
@@ -74,14 +80,8 @@ if view == "BLIP: imagem e linguagem":
         result_slot = st.container()
         try:
             with result_slot.skeleton(height=170):
-                text_en = caption_image(image_bytes, prompts[prompt_mode])
-                text_pt = translate_to_portuguese(text_en)
-            st.session_state["vlm_result"] = {
-                "caption_en": text_en,
-                "caption_pt": text_pt,
-                "prompt_mode": prompt_mode,
-                "prompt_sent": prompts[prompt_mode],
-            }
+                report = scenario_vlm_report(image_bytes, scenario)
+            st.session_state["vlm_result"] = report
         except Exception as exc:
             st.error(
                 "O modelo não pôde ser executado. Na primeira utilização, confirme o acesso à internet "
@@ -89,27 +89,29 @@ if view == "BLIP: imagem e linguagem":
             )
 
     result = st.session_state.get("vlm_result")
-    if result and "caption_pt" in result:
+    if result and "prompt_pt" in result and "generated_pt" in result:
         st.header("Prompt e saída do modelo", icon=":material/compare_arrows:")
         prompt_col, output_col = st.columns(2, vertical_alignment="top")
         with prompt_col.container(border=True, height="stretch"):
             st.subheader("1. Prompt enviado", icon=":material/input:")
-            st.code(
-                result.get("prompt_sent")
-                or "[sem prompt textual — geração condicionada somente pela imagem]",
-                language=None,
-            )
-            st.caption(f"Modo selecionado: {result['prompt_mode']}.")
+            st.code(result["prompt_pt"], language=None)
+            st.caption(f"Cenário selecionado: {result['scenario']}.")
         with output_col.container(border=True, height="stretch"):
             st.subheader("2. Saída final em português", icon=":material/subtitles:")
-            st.markdown(f"## {result['caption_pt']}")
+            st.markdown(f"## {result['generated_pt']}")
 
         with st.container(border=True):
-            st.subheader("Saída bruta do BLIP", icon=":material/data_object:")
-            st.code(result["caption_en"], language=None)
+            st.subheader("Evidência intermediária", icon=":material/data_object:")
+            raw_col, translated_col = st.columns(2, vertical_alignment="top")
+            with raw_col:
+                st.markdown("**BLIP — descrição original em inglês**")
+                st.code(result["visual_evidence_en"], language=None)
+            with translated_col:
+                st.markdown("**Qwen — tradução para português**")
+                st.code(result["visual_evidence_pt"], language=None)
             st.caption(
-                "O BLIP gera originalmente em inglês. O Qwen2.5-1.5B-Instruct traduz a resposta para português "
-                "brasileiro; nenhuma medição ou detecção adicional é realizada nesta etapa."
+                "O Qwen aplica o prompt específico do cenário apenas depois que o BLIP descreve a imagem. "
+                "A resposta não substitui detecção, medição ou validação operacional."
             )
 
     st.mermaid_chart(

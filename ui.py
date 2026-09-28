@@ -101,6 +101,60 @@ def translate_to_portuguese(text):
     return tokenizer.decode(generated_tokens, skip_special_tokens=True).strip()
 
 @st.cache_data(max_entries=30, show_spinner=False)
+def scenario_vlm_report(data, scenario):
+    """Gera uma resposta em português orientada ao cenário escolhido."""
+    import torch
+
+    visual_evidence_en = caption_image(data)
+    visual_evidence_pt = translate_to_portuguese(visual_evidence_en)
+    prompts = {
+        "Cena de tráfego": (
+            "Produza exatamente duas frases, sem título e sem lista. Use este formato obrigatório: "
+            f"\"A evidência visual mostra {visual_evidence_pt}. Por ser uma imagem estática, não é possível "
+            "determinar movimento, velocidade, direção do fluxo ou interações que não estejam explicitamente "
+            "visíveis.\" Não acrescente identidade, intenção, infração, congestionamento ou qualquer outro fato."
+        ),
+        "Condição da via": (
+            "Produza exatamente duas frases, sem título e sem lista. Use este formato obrigatório: "
+            f"\"A evidência visual mostra {visual_evidence_pt}. A descrição disponível não permite determinar "
+            "superfície, visibilidade, congestionamento, obstruções ou riscos da via.\" Não transforme veículos "
+            "estacionados em congestionamento e não acrescente clima, velocidade, dano, acidente ou pavimento."
+        ),
+    }
+    if scenario not in prompts:
+        raise ValueError(f"Cenário VLM não reconhecido: {scenario}")
+    user_prompt = prompts[scenario]
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "Você é um assistente de monitoramento urbano. Use exclusivamente a evidência fornecida, "
+                "diferencie observação de inferência e responda sem títulos ou listas."
+            ),
+        },
+        {"role": "user", "content": user_prompt},
+    ]
+    tokenizer, model, lock = fusion_text_generator()
+    chat = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    inputs = tokenizer(chat, return_tensors="pt")
+    with lock, torch.inference_mode():
+        output = model.generate(
+            **inputs,
+            max_new_tokens=110,
+            do_sample=False,
+            repetition_penalty=1.1,
+        )
+    generated_tokens = output[0][inputs.input_ids.shape[1]:]
+    generated_pt = tokenizer.decode(generated_tokens, skip_special_tokens=True).strip()
+    return {
+        "scenario": scenario,
+        "visual_evidence_en": visual_evidence_en,
+        "visual_evidence_pt": visual_evidence_pt,
+        "prompt_pt": user_prompt,
+        "generated_pt": generated_pt,
+    }
+
+@st.cache_data(max_entries=30, show_spinner=False)
 def multimodal_report(data, speed, signal, weather):
     """Extrai evidência visual com BLIP e gera a síntese multimodal com Qwen."""
     import torch
